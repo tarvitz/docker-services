@@ -1,0 +1,50 @@
+version: '3.3'
+services:
+    gitlab:
+        image: nfox/gitlab
+        container_name: gitlab
+        volumes:
+            - 'repositories:/home/git/repositories'
+            - 'static:/home/git/gitlab/public'
+            - 'secrets:/home/git/secrets'
+        depends_on:
+            - redis
+            - postgres
+        # command: sh -c "while [ 1 ]; do echo 'blank'; sleep 3; done"
+    gitlab-workhorse:
+        image: nfox/gitlab-workhorse
+        container_name: gitlab-workhorse
+        command: >
+            -documentRoot /home/git/gitlab/public
+            -authBackend http://gitlab:8080
+            -listenAddr 0.0.0.0:8181 
+            -secretPath /home/git/secrets/.gitlab_workhorse_secret
+        volumes:
+            - 'secrets:/home/git/secrets/'
+            - 'static:/home/git/gitlab/public'
+        depends_on:
+            - gitlab
+    nginx:
+        image: nfox/gitlab-nginx
+        container_name: gitlab-nginx
+        volumes:
+            - 'nginx-logs:/var/log/nginx'
+        depends_on:
+            - gitlab-workhorse
+        ports:
+            - target: 80
+              published: 8090
+              protocol: tcp
+    postgres:
+        image: nfox/gitlab-postgres
+        container_name: gitlab-postgres
+        volumes:
+            - 'pg-data:/var/lib/postgresql/data'
+    redis:
+        image: redis:alpine
+volumes:
+    nginx-logs:
+    repositories:
+    pg-data:
+    static:
+    secrets:
