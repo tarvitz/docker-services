@@ -10,7 +10,6 @@ services:
         depends_on:
             - redis
             - postgres
-        # command: sh -c "while [ 1 ]; do echo 'blank'; sleep 3; done"
     gitlab-workhorse:
         image: nfox/gitlab-workhorse
         container_name: gitlab-workhorse

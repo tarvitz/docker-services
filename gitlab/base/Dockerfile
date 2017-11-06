@@ -1,7 +1,6 @@
 FROM alpine:latest
 MAINTAINER Nickolas Fox <tarvitz@blacklibrary.ru>
 ARG GITLAB_SOURCES=archive.tar.gz
-WORKDIR /home/git/gitlab
 
 ENV BIN_DEPS="zlib yaml libressl gdbm libre2 readline libffi curl \
               tzdata libxml2 libxslt icu git gettext libpq go gcc g++" \
@@ -10,7 +9,15 @@ ENV BIN_DEPS="zlib yaml libressl gdbm libre2 readline libffi curl \
                 py2-docutils cmake ruby-dev postgresql-dev linux-headers" \
     RUBY_DEPS="ruby-bundler ruby-bigdecimal ruby-irb ruby-rake" \
     NODEJS_DEPS="nodejs yarn"
+ADD ${GITLAB_SOURCES} /home/git/
 
+#: heavy ruby dependencies
+RUN set -x \
+    && echo "renaming artifact to gitlab" \
+    \
+    && mv /home/git/gitlab-ce-*/ /home/git/gitlab
+
+WORKDIR /home/git/gitlab
 RUN set -x \
     && apk update && apk upgrade \
     && apk add ${BIN_DEPS} ${BUILD_DEPS} ${RUBY_DEPS} ${NODEJS_DEPS}
@@ -20,9 +27,6 @@ RUN set -x \
     && /usr/bin/git config --global gc.auto 0 \
     && /usr/bin/git config --global repack.writeBitmaps true
 
-ADD ${GITLAB_SOURCES} /home/git/
-
-#: heavy ruby dependencies
 RUN set -x \
     && bundle install --deployment --without development test mysql aws kerberos \
     \
